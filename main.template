@@ -1,0 +1,151 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Mappings": {
+    "RegionMap": {
+      "us-east-1": {
+        "HostedZoneId": "Z3AQBSTGFYJSTF",
+        "websiteendpoint": "s3-website-us-east-1.amazonaws.com"
+      },
+      "us-west-1": {
+        "HostedZoneId": "Z2F56UZL2M1ACD",
+        "websiteendpoint": "s3-website-us-west-1.amazonaws.com"
+      },
+      "us-west-2": {
+        "HostedZoneId": "Z3BJ6K6RIION7M",
+        "websiteendpoint": "s3-website-us-west-2.amazonaws.com"
+      },
+      "eu-west-1": {
+        "HostedZoneId": "Z1BKCTXD74EZPE",
+        "websiteendpoint": "s3-website-eu-west-1.amazonaws.com"
+      }
+    }
+  },
+  "Parameters": {
+    "DomainName": {
+      "Description": "The DNS name of an existing Amazon Route 53 hosted zone",
+      "Type": "String"
+    },
+    "BucketName": {
+      "Description": "Amazon S3 files bucket name",
+      "Type": "String"
+    },
+    "HostedZoneId": {
+      "Description": "Amazon Route53 Hosted Zone Id",
+      "Type": "String"
+    },
+    "CertificateArn": {
+      "Description": "Certificate Link",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Ref": "BucketName"
+        },
+        "AccessControl": "PublicRead",
+        "WebsiteConfiguration": {
+          "IndexDocument": "index.html",
+          "ErrorDocument": "404.html"
+        }
+      },
+      "DeletionPolicy": "Retain"
+    },
+    "BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Id": "S3Policy",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "PublicReadForGetBucketObjects",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "Bucket"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        "Bucket": {
+          "Ref": "Bucket"
+        }
+      }
+    },
+    "Domain": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "Properties": {
+        "HostedZoneName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "DomainName"
+              },
+              "."
+            ]
+          ]
+        },
+        "RecordSets": [
+          {
+            "Name": {
+              "Ref": "DomainName"
+            },
+            "Type": "A",
+            "AliasTarget": {
+              "HostedZoneId": {
+                "Fn::FindInMap": [
+                  "RegionMap",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "HostedZoneId"
+                ]
+              },
+              "DNSName": {
+                "Fn::FindInMap": [
+                  "RegionMap",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "websiteendpoint"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "Certificate": {
+      "Type": "AWS::CertificateManager::Certificate",
+      "Properties": {
+        "CertificateAuthorityArn": {
+          "Ref": "CertificateArn"
+        },
+        "DomainName": {
+          "Ref": "DomainName"
+        },
+        "ValidationMethod": "DNS"
+      }
+    }
+  },
+  "Outputs": {
+    "IDCloudFront": {
+      "Value": "",
+      "Description": "IDCloudFront"
+    }
+  }
+}

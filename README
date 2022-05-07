@@ -1,0 +1,14 @@
+1. Click on the link https://console.aws.amazon.com/cloudformation/
+2. Create stack
+3. Prerequisite - Prepare template -> Template is ready
+   Specify template -> Upload a template file
+   And Choose file -> main.template
+4. Enter
+    - Stack name
+    - BucketName
+    - CertificateArn
+    - DomainName
+    - HostedZoneId
+5. Other values can be left as default
+
+Stack is created
